@@ -1,5 +1,6 @@
 import weakref
 import logging
+from urlparse import urlsplit
 
 from ..transport import Transport
 from ..exceptions import NotFoundError, TransportError
@@ -12,6 +13,7 @@ from .snapshot import SnapshotClient
 from .utils import query_params, _make_path
 
 logger = logging.getLogger('elasticsearch')
+
 
 def _normalize_hosts(hosts):
     """
@@ -28,25 +30,15 @@ def _normalize_hosts(hosts):
 
     out = []
     # normalize hosts to dicts
-    for i, host in enumerate(hosts):
+    for host in hosts:
         if isinstance(host, string_types):
-            host = host.strip('/')
-            # remove schema information
-            if '://' in host:
-                logger.warning(
-                    "List of nodes should not include schema information (http://): %r.",
-                    host
-                )
-                host = host[host.index('://') + 3:]
-
-            h = {"host": host}
-            if ':' in host:
-                # TODO: detect auth urls
-                host, port = host.rsplit(':', 1)
-                if port.isdigit():
-                    port = int(port)
-                    h = {"host": host, "port": port}
-            out.append(h)
+            url_components = urlsplit(host)
+            connection_args = {"host": url_components.hostname, "port": url_components.port}
+            if url_components.username:
+                connection_args["http_auth"] = ":".join((url_components.username, url_components.password))
+            if url_components.scheme == 'https':
+                connection_args["use_ssl"] = True
+            out.append(connection_args)
         else:
             out.append(host)
     return out
