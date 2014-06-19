@@ -33,9 +33,11 @@ def _normalize_hosts(hosts):
     for host in hosts:
         if isinstance(host, string_types):
             url_components = urlsplit(host)
-            connection_args = {"host": url_components.hostname, "port": url_components.port}
+            connection_args = {"host": url_components.hostname}
+            if url_components.port:
+                connection_args["port"] = url_components.port
             if url_components.username:
-                connection_args["http_auth"] = ":".join((url_components.username, url_components.password))
+                connection_args["http_auth"] = "%s:%s" % (url_components.username, url_components.password or '')
             if url_components.scheme == 'https':
                 connection_args["use_ssl"] = True
             out.append(connection_args)
