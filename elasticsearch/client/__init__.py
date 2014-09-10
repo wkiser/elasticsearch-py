@@ -1,6 +1,7 @@
 import weakref
 import logging
 from urlparse import urlsplit
+import re
 
 from ..transport import Transport
 from ..exceptions import NotFoundError, TransportError
@@ -13,6 +14,8 @@ from .snapshot import SnapshotClient
 from .utils import query_params, _make_path
 
 logger = logging.getLogger('elasticsearch')
+
+host_re = re.compile(r'http|https://.+')
 
 
 def _normalize_hosts(hosts):
@@ -33,6 +36,9 @@ def _normalize_hosts(hosts):
     for host in hosts:
         if isinstance(host, string_types):
             url_components = urlsplit(host)
+            if host_re.match(host) is None:
+                # url scheme omitted, fill in http
+                url_components = urlsplit('http://%s' % host)
             connection_args = {"host": url_components.hostname}
             if url_components.port:
                 connection_args["port"] = url_components.port

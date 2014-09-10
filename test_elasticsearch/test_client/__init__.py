@@ -15,7 +15,7 @@ class TestNormalizeHosts(TestCase):
 
     def test_strings_are_parsed_for_port(self):
         self.assertEquals(
-            [{"host": "elasticsearch.org", "port": 42}, {"host": "user:secret@elasticsearch.com"}],
+            [{"host": "elasticsearch.org", "port": 42}, {'host': u'elasticsearch.com', 'http_auth': u'user:secret'}],
             _normalize_hosts(["elasticsearch.org:42", "user:secret@elasticsearch.com"])
         )
 
@@ -28,8 +28,6 @@ class TestNormalizeHosts(TestCase):
             [{"host": "elasticsearch.org", "port": 9200}],
             _normalize_hosts(["http://elasticsearch.org:9200/"])
         )
-        # schema triggers a warning
-        self.assertEquals(1, logger.warning.call_count)
 
     def test_single_string_is_wrapped_in_list(self):
         self.assertEquals(
