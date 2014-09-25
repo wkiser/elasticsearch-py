@@ -410,7 +410,7 @@ class Elasticsearch(object):
         :arg ignore_unavailable: Whether specified concrete indices should be
             ignored when unavailable (missing or closed)
         :arg lowercase_expanded_terms: Specify whether query terms should be lowercased
-        :arg from_: Starting offset (default: 0)
+        :arg from\_: Starting offset (default: 0)
         :arg preference: Specify the node or shard the operation should be
             performed on (default: random)
         :arg q: Query in the Lucene query string syntax
@@ -552,7 +552,7 @@ class Elasticsearch(object):
         :arg scroll: Specify how long a consistent view of the index should be
             maintained for scrolled search
         """
-        _, data = self.transport.perform_request('POST', _make_path('_search', 'scroll'),
+        _, data = self.transport.perform_request('GET', '/_search/scroll',
             params=params, body=scroll_id)
         return data
 
@@ -663,28 +663,37 @@ class Elasticsearch(object):
             params=params, body=self._bulk_body(body))
         return data
 
-    @query_params('consistency', 'allow_no_indices', 'expand_wildcards',
-        'ignore_unavailable', 'replication', 'routing', 'source', 'timeout', 'q')
+    @query_params('allow_no_indices', 'analyzer', 'consistency',
+        'default_operator', 'df', 'expand_wildcards', 'ignore_unavailable', 'q',
+        'replication', 'routing', 'source', 'timeout')
     def delete_by_query(self, index, doc_type=None, body=None, params=None):
         """
         Delete documents from one or more indices and one or more types based on a query.
         `<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-delete-by-query.html>`_
 
-        :arg index: A comma-separated list of indices to restrict the operation
+        :arg index: A comma-separated list of indices to restrict the operation;
+            use `_all` to perform the operation on all indices
         :arg doc_type: A comma-separated list of types to restrict the operation
-        :arg body: A query to restrict the operation
-        :arg consistency: Specific write consistency setting for the operation
+        :arg body: A query to restrict the operation specified with the Query
+            DSL
         :arg allow_no_indices: Whether to ignore if a wildcard indices
             expression resolves into no concrete indices. (This includes `_all`
             string or when no indices have been specified)
+        :arg analyzer: The analyzer to use for the query string
+        :arg consistency: Specific write consistency setting for the operation
+        :arg default_operator: The default operator for query string query (AND
+            or OR), default u'OR'
+        :arg df: The field to use as default where no field prefix is given in
+            the query string
         :arg expand_wildcards: Whether to expand wildcard expression to concrete
-            indices that are open, closed or both., default 'open'
+            indices that are open, closed or both., default u'open'
         :arg ignore_unavailable: Whether specified concrete indices should be
             ignored when unavailable (missing or closed)
-        :arg replication: Specific replication type (default: sync)
-        :arg routing: Specific routing value
-        :arg source: The URL-encoded query definition (instead of using the request body)
         :arg q: Query in the Lucene query string syntax
+        :arg replication: Specific replication type, default u'sync'
+        :arg routing: Specific routing value
+        :arg source: The URL-encoded query definition (instead of using the
+            request body)
         :arg timeout: Explicit operation timeout
         """
         _, data = self.transport.perform_request('DELETE', _make_path(index, doc_type, '_query'),
@@ -719,8 +728,8 @@ class Elasticsearch(object):
         return data
 
     @query_params('allow_no_indices', 'expand_wildcards', 'ignore_unavailable',
-        'percolate_index', 'percolate_type', 'preference', 'routing', 'version',
-        'version_type')
+        'percolate_format', 'percolate_index', 'percolate_type', 'preference',
+        'routing', 'version', 'version_type')
     def percolate(self, index, doc_type, id=None, body=None, params=None):
         """
         The percolator allows to register queries against an index, and then
@@ -742,6 +751,8 @@ class Elasticsearch(object):
             indices that are open, closed or both., default 'open'
         :arg ignore_unavailable: Whether specified concrete indices should be
             ignored when unavailable (missing or closed)
+        :arg percolate_format: Return an array of matching query IDs instead of
+            objects
         :arg percolate_index: The index to percolate the document into. Defaults
             to index.
         :arg percolate_type: The type to percolate document into. Defaults to
@@ -990,3 +1001,89 @@ class Elasticsearch(object):
         _, data = self.transport.perform_request('GET', _make_path(index,
             doc_type, '_bench'), params=params)
         return data
+
+    @query_params('op_type', 'version', 'version_type')
+    def put_script(self, lang, id, body, params=None):
+        """
+        Create a script in given language with specified ID.
+        `<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-scripting.html>`_
+
+        :arg lang: Script language
+        :arg id: Script ID
+        :arg body: The document
+        :arg op_type: Explicit operation type, default u'index'
+        :arg version: Explicit version number for concurrency control
+        :arg version_type: Specific version type
+        """
+        _, data = self.transport.perform_request('PUT', _make_path('_scripts',
+            lang, id), params=params, body=body)
+        return data
+
+    @query_params('version', 'version_type')
+    def get_script(self, lang, id, params=None):
+        """
+        Retrieve a script from the API.
+        `<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-scripting.html>`_
+
+        :arg lang: Script language
+        :arg id: Script ID
+        :arg version: Explicit version number for concurrency control
+        :arg version_type: Specific version type
+        """
+        _, data = self.transport.perform_request('GET', _make_path('_scripts',
+            lang, id), params=params)
+        return data
+
+    @query_params('version', 'version_type')
+    def delete_script(self, lang, id, params=None):
+        """
+        Remove a stored script from elasticsearch.
+        `<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-scripting.html>`_
+
+        :arg lang: Script language
+        :arg id: Script ID
+        :arg version: Explicit version number for concurrency control
+        :arg version_type: Specific version type
+        """
+        _, data = self.transport.perform_request('DELETE',
+            _make_path('_scripts', lang, id), params=params)
+        return data
+
+    @query_params()
+    def put_template(self, id, body, params=None):
+        """
+        Create a search template.
+        `<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-template.html>`_
+
+        :arg id: Template ID
+        :arg body: The document
+        """
+        _, data = self.transport.perform_request('PUT', _make_path('_search',
+            'template', id), params=params, body=body)
+        return data
+
+    @query_params()
+    def get_template(self, id, body=None, params=None):
+        """
+        Retrieve a search template.
+        `<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-template.html>`_
+
+        :arg id: Template ID
+        :arg body: The document
+        """
+        _, data = self.transport.perform_request('GET', _make_path('_search',
+            'template', id), params=params, body=body)
+        return data
+
+    @query_params()
+    def delete_template(self, id=None, params=None):
+        """
+        Delete a search template.
+        `<http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-template.html>`_
+
+        :arg id: Template ID
+        """
+        _, data = self.transport.perform_request('DELETE', _make_path('_search',
+            'template', id), params=params)
+        return data
+

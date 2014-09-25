@@ -1,5 +1,8 @@
 import logging
-import json
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 from ..exceptions import TransportError, HTTP_EXCEPTIONS
 
@@ -78,7 +81,7 @@ class Connection(object):
         if body:
             body = body.decode('utf-8')
 
-        logger.info('> %s', body)
+        logger.debug('> %s', body)
 
     def _raise_error(self, status_code, raw_data):
         """ Locate appropriate exception and raise it. """

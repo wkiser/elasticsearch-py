@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 import time
 
-from elasticsearch.transport import Transport
+from elasticsearch.transport import Transport, get_host_info
 from elasticsearch.connection import Connection
 from elasticsearch.exceptions import ConnectionError
 
@@ -37,7 +37,29 @@ CLUSTER_NODES = '''{
     }
 }'''
 
+class TestHostsInfoCallback(TestCase):
+    def test_master_only_nodes_are_ignored(self):
+        nodes = [
+            {'attributes': {'data': 'false', 'client': 'true'}},
+            {'attributes': {'data': 'false'}},
+            {'attributes': {'data': 'false', 'master': 'true'}},
+            {'attributes': {'data': 'false', 'master': 'false'}},
+            {'attributes': {}},
+            {}
+        ]
+        chosen = [ i for i, node_info in enumerate(nodes) if get_host_info(node_info, i) is not None]
+        self.assertEquals([0, 3, 4, 5], chosen)
+
+
 class TestTransport(TestCase):
+    def test_request_timeout_extracted_from_params_and_passed(self):
+        t = Transport([{}], connection_class=DummyConnection)
+
+        t.perform_request('GET', '/', params={'request_timeout': 42})
+        self.assertEquals(1, len(t.get_connection().calls))
+        self.assertEquals(('GET', '/', {}, None), t.get_connection().calls[0][0])
+        self.assertEquals({'timeout': 42, 'ignore': ()}, t.get_connection().calls[0][1])
+
     def test_send_get_body_as_source(self):
         t = Transport([{}], send_get_body_as='source', connection_class=DummyConnection)
 
@@ -59,6 +81,13 @@ class TestTransport(TestCase):
         self.assertEquals(1, len(t.get_connection().calls))
         self.assertEquals(('GET', '/', None, b'\xe4\xbd\xa0\xe5\xa5\xbd'), t.get_connection().calls[0][0])
 
+    def test_body_bytes_get_passed_untouched(self):
+        t = Transport([{}], connection_class=DummyConnection)
+
+        body = b'\xe4\xbd\xa0\xe5\xa5\xbd'
+        t.perform_request('GET', '/', body=body)
+        self.assertEquals(1, len(t.get_connection().calls))
+        self.assertEquals(('GET', '/', None, body), t.get_connection().calls[0][0])
 
     def test_kwargs_passed_on_to_connections(self):
         t = Transport([{'host': 'google.com'}], port=123)

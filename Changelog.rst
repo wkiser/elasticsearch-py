@@ -3,8 +3,30 @@
 Changelog
 =========
 
-1.0.1 (dev)
------------
+1.2.0 (2014-08-03)
+------------------
+
+Compatibility with newest (1.3) Elasticsearch APIs.
+
+ * Filter out master-only nodes when sniffing
+ * Improved docs and error messages
+
+1.1.1 (2014-07-04)
+------------------
+
+Bugfix release fixing escaping issues with `request_timeout`.
+
+1.1.0 (2014-07-02)
+------------------
+
+Compatibility with newest Elasticsearch APIs.
+
+ * Test helpers - `ElasticsearchTestCase` and `get_test_client` for use in your
+   tests
+ * Python 3.2 compatibility
+ * Use ``simplejson`` if installed instead of stdlib json library
+ * Introducing a global `request_timeout` parameter for per-call timeout
+ * Bug fixes
 
 1.0.0 (2014-02-11)
 ------------------

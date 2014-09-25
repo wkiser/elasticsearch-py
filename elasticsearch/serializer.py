@@ -1,4 +1,7 @@
-import json
+try:
+    import simplejson as json
+except ImportError:
+    import json
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -25,7 +28,7 @@ class JSONSerializer(object):
             return data.isoformat()
         elif isinstance(data, Decimal):
             return float(data)
-        raise TypeError
+        raise TypeError("Unable to serialize %r (type: %s)" % (data, type(data)))
 
     def loads(self, s):
         try:
